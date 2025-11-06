@@ -1,25 +1,24 @@
 FROM n8nio/n8n:latest
 
+# Mantenernos como root para todas las instalaciones
 USER root
 
 # Instalar herramientas de compilación necesarias
 RUN apk add --no-cache python3 make g++ git
 
-# Instalar pnpm globalmente (el gestor de paquetes que n8n usa)
+# Instalar pnpm globalmente
 RUN npm install -g pnpm
 
-# Cambiar al usuario node
-USER node
-
-# Navegar al directorio de n8n e instalar las dependencias usando pnpm
+# Instalar los paquetes de LangChain usando pnpm
+# Lo hacemos como root para tener permisos de escritura
 RUN cd /usr/local/lib/node_modules/n8n && \
     pnpm install langchain @langchain/core @langchain/community @langchain/openai --filter n8n
 
-USER root
+# Dar permisos correctos a todos los archivos de n8n
+# Esto asegura que el usuario node pueda leer y usar los paquetes instalados
+RUN chown -R node:node /usr/local/lib/node_modules/n8n
 
-# Dar permisos correctos a los archivos instalados
-RUN chown -R node:node /usr/local/lib/node_modules/n8n/node_modules
-
+# AHORA sí cambiamos al usuario node para ejecutar n8n
 USER node
 
 WORKDIR /data
